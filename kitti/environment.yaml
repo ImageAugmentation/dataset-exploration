@@ -12,3 +12,5 @@ dependencies:
     - IPython==8.4.0
     - scipy==1.8.1
     - torch==1.11.0
+    - torchvision==0.12.0
+    - matplotlib==3.5.2
