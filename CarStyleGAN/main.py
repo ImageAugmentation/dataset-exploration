@@ -14,10 +14,10 @@ import torchvision.utils as vutils
 from IPython.display import HTML
 
 # Set random seed for reproducibility
-from CarStyleDCGAN import app_home
-from CarStyleDCGAN.KittiDataset import KittiDataset
-from CarStyleDCGAN.discriminator import Discriminator
-from CarStyleDCGAN.generator import Generator
+from CarStyleGAN import app_home
+from CarStyleGAN.KittiDataset import KittiDataset
+from CarStyleGAN.discriminator import Discriminator
+from CarStyleGAN.generator import Generator
 
 manualSeed = 999
 # manualSeed = random.randint(1, 10000) # use if you want new results
@@ -33,15 +33,15 @@ workers = 0
 batch_size = 8
 # Spatial size of training images. All images will be resized to this
 #   size using a transformer.
-image_size = 64
+image_size = 256
 # Number of channels in the training images. For color images this is 3
 nc = 3
 # Size of z latent vector (i.e. size of generator input)
 nz = 100
 # Size of feature maps in generator
-ngf = 64
+ngf = 256
 # Size of feature maps in discriminator
-ndf = 64
+ndf = 256
 # Number of training epochs
 num_epochs = 150
 # Learning rate for optimizers
@@ -55,8 +55,8 @@ ngpu = 1
 # Create the dataset
 dataset = KittiDataset(root=DATASET,
                        transforms=transforms.Compose([
-                           #transforms.Resize(image_size),
-                           transforms.CenterCrop((375, 1242)),
+                           transforms.Resize(image_size),
+                           transforms.CenterCrop((image_size, image_size)),
                            transforms.ToTensor(),
                            #transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
                        ]),
