@@ -44,4 +44,4 @@ def adjust_color(image_tensor, mask_tensor, label, factor):
     colored_background = image.copy()
     colored_background.paste(colored_cars, (0, 0), colored_cars)
 
-    return transforms.ToTensor()(colored_background)
+    return colored_background
