@@ -19,7 +19,11 @@ CHECKPOINT_DISC = "disc.pth.tar"
 CHECKPOINT_GEN = "gen.pth.tar"
 
 both_transform = A.Compose(
-    [A.Resize(width=256, height=256),], additional_targets={"image0": "image"},
+    [
+        # Images in kitti in different dimensions that are 370,374,375,376
+        A.CenterCrop(width=370, height=370),
+        A.Resize(width=256, height=256),
+    ], additional_targets={"image0": "image"},
 )
 
 transform_only_input = A.Compose(
