@@ -27,6 +27,7 @@ class KittiDataset(torch.utils.data.Dataset):
         mask_path = os.path.join(self.root, self.mask_root, self.masks[idx])
 
         img = Image.open(img_path)
+        print(img.size)
         mask = Image.open(mask_path)
 
         CAR_LABEL = 26
