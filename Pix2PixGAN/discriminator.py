@@ -9,7 +9,7 @@ class CNNBlock(nn.Module):
             nn.Conv2d(
                 in_channels, out_channels, 4, stride, 1, bias=False, padding_mode="reflect"
             ),
-            nn.BatchNorm2d(out_channels),
+            nn.InstanceNorm2d(out_channels, affine=True),
             nn.LeakyReLU(0.2),
         )
 
