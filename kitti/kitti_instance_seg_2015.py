@@ -5,6 +5,7 @@ import numpy as np
 import torchvision.datasets.utils as vision_utils
 from PIL import Image
 from torch.utils.data.dataset import Dataset
+from torchvision.transforms import ToTensor
 
 
 class KittiInstanceSeg2015(Dataset):
@@ -103,6 +104,7 @@ class KittiInstanceSeg2015(Dataset):
 
     def _parse_instance_target(self, index: int) -> List:
         target = []
+        image_path = os.path.basename(self.images[index])
         image_np = np.asarray(Image.open(self.images[index]))
         mask_np = np.asarray(Image.open(self.targets[index]))
 
@@ -111,8 +113,8 @@ class KittiInstanceSeg2015(Dataset):
             if instance_id > 0:
                 label = instance_id // 256
                 if self.target_filter is None or label in self.target_filter:
-                    instance = Instance(mask_np, instance_id, image_np, transforms=self.target_transform)
-                    target.append(instance)
+                    instance = Instance(image_path, mask_np, instance_id, image_np, transforms=self.target_transform)
+                    target.append(instance.to_dict())
 
         return target
 
@@ -256,6 +258,7 @@ for label in labels:
 # ------------------------------------------------------------------------------------------------
 
 class Instance(object):
+    image_path: str = None
     instance_id: int = 0
     label: Label = None
     instance_number: int = 0
@@ -264,11 +267,12 @@ class Instance(object):
     __image: Image = None
     __instance_mask: np.array = None
 
-    def __init__(self, mask_np: np.array, instance_id: int, image_np: np.array = None, extract_inplace: bool = True,
+    def __init__(self, image_path: str, mask_np: np.array, instance_id: int, image_np: np.array = None, extract_inplace: bool = True,
                  clear_background: bool = True,
                  transforms=None):
         if instance_id == -1:
             return
+        self.image_path = image_path
         self.instance_id = int(instance_id)
         self.label = id2label[int(self.instance_id // 256)]
         self.instance_number = int(self.instance_id % 256)
@@ -279,6 +283,24 @@ class Instance(object):
             if image_np is None:
                 raise RuntimeError("Original image 'image_np' should be given to extract the instance from it.")
             self.__image = self.extract_instance(image_np, mask_np, clear_background)
+
+    def to_dict(self):
+        data = {
+            'image_path': self.image_path,
+            'instance_id': self.instance_id,
+            'label': self.label,
+            'instance_number': self.instance_number,
+            'bbox': self.bbox,
+            'mask': self.mask,
+            'size': self.size,
+        }
+        if self.__image is not None:
+            data['image'] = self.__image
+
+        if self.__instance_mask is not None:
+            data['instance_mask'] = self.__instance_mask
+
+        return data
 
     @property
     def image(self) -> Image:
@@ -345,16 +367,62 @@ class Instance(object):
         return "(" + str(self.instance_id) + ")"
 
 
-DATASET = "../../dataset"
-semantic_label_car = 26  # car
-train_dataset = KittiInstanceSeg2015(root=DATASET,
-                                     train=True,
-                                     download=True,
-                                     target_label='instance',
-                                     target_filter=[semantic_label_car])
-
 # test
 if __name__ == "__main__":
+    import torch
+    import multiprocessing
+    from torchvision import transforms
+
+    DATASET = "dataset"
+    semantic_label_car = 26  # car
+
+    train_dataset = KittiInstanceSeg2015(root=DATASET,
+                                         train=True,
+                                         download=True,
+                                         target_label='instance',
+                                         target_filter=[semantic_label_car],
+                                         #transform=transforms.Compose([ToTensor()]),
+                                         #target_transform=transforms.Compose([ToTensor()]),
+                                         )
+    """
+    dataloader = torch.utils.data.DataLoader(train_dataset,
+                                             batch_size=1,
+                                             shuffle=False,
+                                             num_workers=multiprocessing.cpu_count(),
+                                             )
+
+    for i_batch, sample_batched in enumerate(dataloader):
+        print(i_batch)
+    """
+
+    """
+    image_path: str = None
+    instance_id: int = 0
+    label: Label = None
+    instance_number: int = 0
+    bbox: tuple[int, int, int, int]
+    size: tuple[int, int]
+    __image: Image = None
+    __instance_mask: np.array = None
+    """
+    os.makedirs("masks", exist_ok=True)
+    os.makedirs("instances", exist_ok=True)
+    with open('instances.txt', 'w') as f:
+        for batch in train_dataset:
+            image, instances = batch
+            if len(instances) > 0:
+                image_name, extension = instances[0]['image_path'].split('.')
+
+                for i in instances:
+                    i['image'].save(f"instances/{image_name}_{i['label'].name}_{str(i['instance_number'])}.{extension}")
+                    f.write(f"{instances[0]['image_path']} {i['label'].name} {str(i['instance_number'])} {','.join(map(str, i['bbox']))} {','.join(map(str, i['size']))}\n")
+
+                    Image.fromarray(i['mask']).save(f"masks/{image_name}_{i['label']}_{str(i['instance_number'])}.{extension}")
+
+
+
+
+    """
     print(len(train_dataset))
     img, trg = train_dataset[0]
     print(len(trg))
@@ -365,3 +433,4 @@ if __name__ == "__main__":
         break
         print(f"-- {i.label.name} - {i.instance_number}")
     print(type(trg[0]))
+    """
