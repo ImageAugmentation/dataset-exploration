@@ -1,4 +1,5 @@
 # Dataset Expolarationx
+<code class="language-mermaid">
 ```mermaid
   graph TD;
       SCP(SimpleCopyPaste<br>CVPR,2021)
@@ -62,3 +63,4 @@
      
       
 ```
+</code>
